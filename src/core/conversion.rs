@@ -2,7 +2,19 @@ pub enum ConversionError {
     NoConversions,
 }
 
-pub struct Measurement {}
+pub enum MeasurementKind {
+    Currency,
+    Unit,
+}
+
+
+pub struct Measurement {
+    pub symbol: String,
+    pub code: String,
+    pub rate: u64,
+    pub name: String,
+    pub kind: MeasurementKind,
+}
 
 pub struct Conversion {}
 
@@ -11,8 +23,8 @@ pub struct ConversionService {
 }
 
 pub struct ConversionContext<'a> {
-    measurement: &'a Measurement,
-    value: f64,
+    pub measurement: &'a Measurement,
+    pub value: f64,
 }
 
 pub struct ConversionRequest<'a> {
@@ -22,13 +34,11 @@ pub struct ConversionRequest<'a> {
 }
 
 impl ConversionService {
-    pub fn match_() -> Result<Vec<ConversionContext>, ConversionError> {
+    pub fn search(&self, _content: String) -> Result<Vec<ConversionContext<'static>>, ConversionError> {
         Err(ConversionError::NoConversions)
     }
 
-
-    pub fn convert(&self, request: ConversionRequest) -> Result<Conversion, ConversionError> {
-
+    pub fn convert(&self, _request: ConversionRequest) -> Result<Conversion, ConversionError> {
         Ok(Conversion {})
     }
 }

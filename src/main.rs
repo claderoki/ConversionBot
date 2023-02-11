@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::env;
 
 use crate::commands::id::IdCommand;
-use crate::core::conversion::ConversionService;
+use crate::core::conversion::{ConversionService, Measurement, MeasurementKind};
 use crate::slash::{ApplicationCommand, CommandContext};
 use serenity::async_trait;
 use serenity::model::application::interaction::Interaction;
@@ -33,7 +33,21 @@ impl Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn message(&self, _ctx: Context, _new_message: Message) {
+    async fn message(&self, _ctx: Context, message: Message) {
+        if let Ok(contexts) = self.conversion_service.search(message.content) {
+            let mut context_currencies: Option<Vec<&Measurement>> = None;
+            for context in contexts {
+
+                
+
+                if let MeasurementKind::Currency = context.measurement.kind {
+                    if context_currencies.is_none() {
+                        context_currencies = Some(Vec::new());
+                    }
+                }
+            }
+        }
+
         todo!()
     }
 
@@ -76,12 +90,27 @@ impl EventHandler for Handler {
     }
 }
 
+// mod env {
+//     pub fn load() {
+//
+//     }
+//     pub fn validate() {
+//
+//     }
+// }
+
+fn validate_env() {
+
+}
+
 fn init_env() {
 
 }
 
 #[tokio::main]
 async fn main() {
+    // self::env::load();
+
     init_env();
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
