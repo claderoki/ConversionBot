@@ -7,7 +7,6 @@ pub enum MeasurementKind {
     Unit,
 }
 
-
 pub struct Measurement {
     pub symbol: String,
     pub code: String,
@@ -16,10 +15,14 @@ pub struct Measurement {
     pub kind: MeasurementKind,
 }
 
-pub struct Conversion {}
+pub struct Conversion<'a> {
+    pub from: &'a Measurement,
+    pub to: &'a Measurement,
+    pub value: f64,
+    pub converted: f64,
+}
 
 pub struct ConversionService {
-
 }
 
 pub struct ConversionContext<'a> {
@@ -28,9 +31,9 @@ pub struct ConversionContext<'a> {
 }
 
 pub struct ConversionRequest<'a> {
-    from: &'a Measurement,
-    value: f64,
-    to_list: Vec<&'a Measurement>,
+    pub from: &'a Measurement,
+    pub value: f64,
+    pub to_list: Vec<&'a Measurement>,
 }
 
 impl ConversionService {
@@ -38,7 +41,8 @@ impl ConversionService {
         Err(ConversionError::NoConversions)
     }
 
-    pub fn convert(&self, _request: ConversionRequest) -> Result<Conversion, ConversionError> {
-        Ok(Conversion {})
+    pub fn convert(&self, _request: ConversionRequest) -> Result<Vec<Conversion>, ConversionError> {
+
+        Ok(Vec::new())
     }
 }

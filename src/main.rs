@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::env;
 
 use crate::commands::id::IdCommand;
-use crate::core::conversion::{ConversionService, Measurement, MeasurementKind};
+use crate::core::conversion::{ConversionRequest, ConversionService, Measurement, MeasurementKind};
 use crate::slash::{ApplicationCommand, CommandContext};
 use serenity::async_trait;
 use serenity::model::application::interaction::Interaction;
@@ -31,36 +31,38 @@ impl Handler {
     }
 }
 
+
+
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, _ctx: Context, message: Message) {
         if let Ok(contexts) = self.conversion_service.search(message.content) {
             let mut context_currencies: Option<Vec<&Measurement>> = None;
             for context in contexts {
-
-                
+                let request = ConversionRequest {
+                    from: context.measurement,
+                    value: context.value,
+                    to_list: vec![],
+                };
 
                 if let MeasurementKind::Currency = context.measurement.kind {
                     if context_currencies.is_none() {
+                        // cached context currencies
                         context_currencies = Some(Vec::new());
                     }
                 }
+
+                if let Ok(conversion) = self.conversion_service.convert(request) {
+
+                }
             }
         }
-
-        todo!()
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let guild_id = GuildId(
-            env::var("GUILD_ID")
-                .expect("Expected GUILD_ID in environment")
-                .parse()
-                .expect("GUILD_ID must be an integer"),
-        );
-
+        let guild_id = GuildId(env::var("GUILD_ID").unwrap().parse().unwrap());
         let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             for cmd in self.commands.values() {
                 commands.create_application_command(|command| {
@@ -90,29 +92,33 @@ impl EventHandler for Handler {
     }
 }
 
-// mod env {
-//     pub fn load() {
-//
-//     }
-//     pub fn validate() {
-//
-//     }
-// }
+mod envhelper {
+    use std::env;
 
-fn validate_env() {
-
-}
-
-fn init_env() {
-
+    pub fn load() {
+        std::fs::read_to_string(".env")
+            .expect("No env file found.")
+            .lines()
+            .map(|l|l.trim())
+            .filter(|l|!l.is_empty())
+            .filter_map(|x| x.split_once("="))
+            .for_each(|l|env::set_var(l.0, l.1));
+    }
+    pub fn validate() {
+        env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+        env::var("GUILD_ID")
+            .expect("Expected GUILD_ID in environment")
+            .parse::<u64>()
+            .expect("GUILD_ID must be an integer");
+    }
 }
 
 #[tokio::main]
 async fn main() {
-    // self::env::load();
+    envhelper::load();
+    envhelper::validate();
 
-    init_env();
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    let token = env::var("DISCORD_TOKEN").unwrap();
 
     let mut client = Client::builder(token, GatewayIntents::MESSAGE_CONTENT)
         .event_handler(Handler::new())
