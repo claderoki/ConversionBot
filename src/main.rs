@@ -26,12 +26,10 @@ impl Handler {
 
         Self {
             commands: commands.into_iter().map(|c| (c.get_name(), c)).collect(),
-            conversion_service: ConversionService {},
+            conversion_service: ConversionService::new(vec![]),
         }
     }
 }
-
-
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -39,20 +37,22 @@ impl EventHandler for Handler {
         if let Ok(contexts) = self.conversion_service.search(message.content) {
             let mut context_currencies: Option<Vec<&Measurement>> = None;
             for context in contexts {
+                if context.measurement.kind.is_currency() {
+                    if context_currencies.is_none() {
+                        // cached context currencies
+                        context_currencies = Some(Vec::new());
+                    } else {
+                        // add currencies to list.
+                    }
+                }
+
                 let request = ConversionRequest {
                     from: context.measurement,
                     value: context.value,
                     to_list: vec![],
                 };
 
-                if let MeasurementKind::Currency = context.measurement.kind {
-                    if context_currencies.is_none() {
-                        // cached context currencies
-                        context_currencies = Some(Vec::new());
-                    }
-                }
-
-                if let Ok(conversion) = self.conversion_service.convert(request) {
+                if let Ok(_conversion) = self.conversion_service.convert(request) {
 
                 }
             }
@@ -101,7 +101,7 @@ mod envhelper {
             .lines()
             .map(|l|l.trim())
             .filter(|l|!l.is_empty())
-            .filter_map(|x| x.split_once("="))
+            .filter_map(|x| x.split_once('='))
             .for_each(|l|env::set_var(l.0, l.1));
     }
     pub fn validate() {
