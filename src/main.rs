@@ -4,9 +4,10 @@ mod slash;
 
 use std::collections::HashMap;
 use std::env;
+use std::sync::Arc;
 
 use crate::commands::id::IdCommand;
-use crate::core::conversion::{ConversionRequest, ConversionService, Measurement, MeasurementKind};
+use crate::core::conversion::{ConversionRequest, ConversionService, Measurement};
 use crate::slash::{ApplicationCommand, CommandContext};
 use serenity::async_trait;
 use serenity::model::application::interaction::Interaction;
@@ -34,8 +35,11 @@ impl Handler {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, _ctx: Context, message: Message) {
-        if let Ok(contexts) = self.conversion_service.search(message.content) {
-            let mut context_currencies: Option<Vec<&Measurement>> = None;
+        if let Ok(contexts) = self
+            .conversion_service
+            .search(message.content.to_lowercase().as_str())
+        {
+            let mut context_currencies: Option<Vec<Arc<Measurement>>> = None;
             for context in contexts {
                 if context.measurement.kind.is_currency() {
                     if context_currencies.is_none() {
@@ -52,9 +56,7 @@ impl EventHandler for Handler {
                     to_list: vec![],
                 };
 
-                if let Ok(_conversion) = self.conversion_service.convert(request) {
-
-                }
+                if let Ok(_conversion) = self.conversion_service.convert(request) {}
             }
         }
     }
@@ -99,10 +101,10 @@ mod envhelper {
         std::fs::read_to_string(".env")
             .expect("No env file found.")
             .lines()
-            .map(|l|l.trim())
-            .filter(|l|!l.is_empty())
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty())
             .filter_map(|x| x.split_once('='))
-            .for_each(|l|env::set_var(l.0, l.1));
+            .for_each(|l| env::set_var(l.0, l.1));
     }
     pub fn validate() {
         env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
