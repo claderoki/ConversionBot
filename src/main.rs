@@ -7,7 +7,7 @@ use std::env;
 use std::sync::Arc;
 
 use crate::commands::id::IdCommand;
-use crate::core::conversion::{ConversionRequest, ConversionService, Measurement};
+use crate::core::conversion::{ConversionRequest, ConversionService, Measurement, MeasurementKind};
 use crate::slash::{ApplicationCommand, CommandContext};
 use serenity::async_trait;
 use serenity::model::application::interaction::Interaction;
@@ -15,19 +15,53 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
+use sqlx::{MySql, MySqlPool, Pool};
 
+#[derive(Debug)]
 struct Handler {
     commands: HashMap<String, Box<dyn ApplicationCommand>>,
     conversion_service: ConversionService,
 }
 
+async fn load_units(pool: &Pool<MySql>) -> Result<Vec<Measurement>, String> {
+    Ok(sqlx::query!("SELECT * FROM measurement")
+        .fetch_all(pool)
+        .await
+        .map_err(|_| String::from("Error"))?
+        .into_iter()
+        .map(|r| Measurement {
+            symbol: r.symbol,
+            code: r.code,
+            rate: r.rate,
+            name: r.name,
+            kind: MeasurementKind::Unit,
+        })
+        .collect())
+}
+
+async fn load_currencies(pool: &Pool<MySql>) -> Result<Vec<Measurement>, String> {
+    Ok(sqlx::query!("SELECT * FROM currency")
+        .fetch_all(pool)
+        .await
+        .map_err(|_| String::from("Error"))?
+        .into_iter()
+        .map(|r| Measurement {
+            symbol: r.symbol,
+            code: r.code,
+            rate: r.rate,
+            name: r.name,
+            kind: MeasurementKind::Currency,
+        })
+        .collect())
+}
+
 impl Handler {
-    pub fn new() -> Self {
+    pub fn new(measurements: Vec<Measurement>) -> Self {
         let commands: Vec<Box<dyn ApplicationCommand>> = vec![Box::new(IdCommand)];
 
         Self {
             commands: commands.into_iter().map(|c| (c.get_name(), c)).collect(),
-            conversion_service: ConversionService::new(vec![]),
+            conversion_service: ConversionService::new(measurements),
         }
     }
 }
@@ -108,6 +142,7 @@ mod envhelper {
     }
     pub fn validate() {
         env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+        env::var("DATABASE_URL").expect("Expected a DATABASE_URL in the environment");
         env::var("GUILD_ID")
             .expect("Expected GUILD_ID in environment")
             .parse::<u64>()
@@ -120,10 +155,23 @@ async fn main() {
     envhelper::load();
     envhelper::validate();
 
+    let pool = MySqlPool::connect(env::var("DATABASE_URL").unwrap().as_str())
+        .await
+        .unwrap();
+
+    let measurements = load_units(&pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .chain(load_currencies(&pool).await.unwrap())
+        .collect();
+
     let token = env::var("DISCORD_TOKEN").unwrap();
 
+    let handler = Handler::new(measurements);
+    println!("{:?}", handler);
     let mut client = Client::builder(token, GatewayIntents::MESSAGE_CONTENT)
-        .event_handler(Handler::new())
+        .event_handler(handler)
         .await
         .expect("Error creating client");
 

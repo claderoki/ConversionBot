@@ -4,6 +4,7 @@ use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::interaction::application_command::CommandDataOptionValue;
 
+#[derive(Debug)]
 pub struct IdCommand;
 
 #[async_trait]

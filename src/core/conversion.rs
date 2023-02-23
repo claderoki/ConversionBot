@@ -1,10 +1,12 @@
-use regex::{Regex};
+use regex::Regex;
 use std::sync::{Arc, Mutex};
 
+#[derive(Debug)]
 pub enum ConversionError {
     NoConversions,
 }
 
+#[derive(Debug)]
 pub enum MeasurementKind {
     Currency,
     Unit,
@@ -16,6 +18,7 @@ impl MeasurementKind {
     }
 }
 
+#[derive(Debug)]
 pub struct Measurement {
     pub symbol: String,
     pub code: String,
@@ -24,17 +27,20 @@ pub struct Measurement {
     pub kind: MeasurementKind,
 }
 
+#[derive(Debug)]
 pub struct MeasurementConversion {
     pub to: Arc<Measurement>,
     pub value: f64,
 }
 
+#[derive(Debug)]
 pub struct Conversion {
     pub from: Arc<Measurement>,
     pub base_value: f64,
     pub to: Vec<MeasurementConversion>,
 }
 
+#[derive(Debug)]
 struct Regexes {
     currency_regex: Regex,
     measurement_regex: Regex,
@@ -50,10 +56,42 @@ impl Regexes {
         .unwrap()
     }
 
-    pub fn new(measurements: &[Measurement]) -> Self {
+    pub fn new(currencies: Vec<String>, units: Vec<String>) -> Self {
+        Self {
+            currency_regex: Self::format_raw(r"({values})(\d+(\.\d+)*)(?:$|\n|)", currencies),
+            measurement_regex: Self::format_raw(r"([+-]?\d+(\.\d+)*)({values})(?:$|\n|)", units),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ConversionContext {
+    pub measurement: Arc<Measurement>,
+    pub value: f64,
+}
+
+#[derive(Debug)]
+pub struct ConversionRequest {
+    pub from: Arc<Measurement>,
+    pub value: f64,
+    pub to_list: Vec<Arc<Measurement>>,
+}
+
+#[derive(Debug)]
+pub struct ConversionService {
+    measurements: Mutex<Vec<Arc<Measurement>>>,
+    regexes: Regexes,
+}
+
+impl ConversionService {
+    fn should_skip_currency(measurement: &Measurement) -> bool {
+        matches!(measurement.code.to_lowercase().as_str(), "p" | "k" | "s" | "r" | "t" | "e" | "d" | "m" | "km" | "g" | "ar" | "l" | "le" | "ush" | "br")
+    }
+
+    pub fn new(measurements: Vec<Measurement>) -> Self {
         let currency_codes: Vec<String> = measurements
             .iter()
-            .filter(|m| m.kind.is_currency())
+            .filter(|m| m.kind.is_currency() && !Self::should_skip_currency(m))
             .map(|m| m.symbol.to_lowercase())
             .collect();
         let measurements_codes: Vec<String> = measurements
@@ -61,36 +99,9 @@ impl Regexes {
             .filter(|m| !m.kind.is_currency())
             .map(|m| m.code.to_lowercase())
             .collect();
+
         Self {
-            currency_regex: Self::format_raw(r"({values})(\d+(\.\d+)*)(?!\w)", currency_codes),
-            measurement_regex: Self::format_raw(
-                r"([+-]?\d+(\.\d+)*)({values})(?!\w)",
-                measurements_codes,
-            ),
-        }
-    }
-}
-
-pub struct ConversionContext {
-    pub measurement: Arc<Measurement>,
-    pub value: f64,
-}
-
-pub struct ConversionRequest {
-    pub from: Arc<Measurement>,
-    pub value: f64,
-    pub to_list: Vec<Arc<Measurement>>,
-}
-
-pub struct ConversionService {
-    measurements: Mutex<Vec<Arc<Measurement>>>,
-    regexes: Regexes,
-}
-
-impl ConversionService {
-    pub fn new(measurements: Vec<Measurement>) -> Self {
-        Self {
-            regexes: Regexes::new(&measurements),
+            regexes: Regexes::new(currency_codes, measurements_codes),
             measurements: Mutex::new(measurements.into_iter().map(Arc::new).collect()),
         }
     }

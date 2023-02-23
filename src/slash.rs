@@ -2,11 +2,12 @@ use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use std::error::Error;
+use std::fmt::Debug;
 
 #[async_trait]
 pub trait ApplicationCommand
 where
-    Self: Sync + Send,
+    Self: Sync + Send + Debug,
 {
     fn get_name(&self) -> String;
     async fn run(&self, context: CommandContext) -> CommandResult;
