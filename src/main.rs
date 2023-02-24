@@ -69,10 +69,12 @@ impl Handler {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, _ctx: Context, message: Message) {
+        println!("Message received.");
         if let Ok(contexts) = self
             .conversion_service
             .search(message.content.to_lowercase().as_str())
         {
+            println!("{:?}", contexts);
             let mut context_currencies: Option<Vec<Arc<Measurement>>> = None;
             for context in contexts {
                 if context.measurement.kind.is_currency() {
@@ -92,6 +94,8 @@ impl EventHandler for Handler {
 
                 if let Ok(_conversion) = self.conversion_service.convert(request) {}
             }
+        } else {
+            println!("No conversions found.");
         }
     }
 
@@ -99,7 +103,7 @@ impl EventHandler for Handler {
         println!("{} is connected!", ready.user.name);
 
         let guild_id = GuildId(env::var("GUILD_ID").unwrap().parse().unwrap());
-        let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+        let _commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             for cmd in self.commands.values() {
                 commands.create_application_command(|command| {
                     cmd.register(command);
@@ -109,8 +113,6 @@ impl EventHandler for Handler {
             commands
         })
         .await;
-
-        println!("I now have the following guild slash commands: {commands:#?}");
     }
 
     async fn interaction_create(&self, _ctx: Context, interaction: Interaction) {
@@ -148,6 +150,10 @@ mod envhelper {
             .parse::<u64>()
             .expect("GUILD_ID must be an integer");
     }
+}
+
+async fn init_client() {
+
 }
 
 #[tokio::main]
