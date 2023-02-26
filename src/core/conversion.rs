@@ -1,5 +1,5 @@
-use regex::Regex;
 use itertools::Itertools;
+use regex::Regex;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
@@ -59,8 +59,8 @@ impl Regexes {
 
     pub fn new(currencies: Vec<String>, units: Vec<String>) -> Self {
         Self {
-            currency_regex: Self::format_raw(r"({values})(\d+(\.\d+)*)(?:$|\n|)", currencies),
-            measurement_regex: Self::format_raw(r"([+-]?\d+(\.\d+)*)({values})(?:$|\n|)", units),
+            currency_regex: Self::format_raw(r"({values})(\d+(\.\d+)*)", currencies),
+            measurement_regex: Self::format_raw(r"([+-]?\d+(\.\d+)*)({values})", units),
         }
     }
 }
@@ -86,8 +86,23 @@ pub struct ConversionService {
 
 impl ConversionService {
     fn should_skip_currency(measurement: &Measurement) -> bool {
-        matches!(measurement.code.to_lowercase().as_str(), "p" | "k" | "s" | "r" | "t" | "e" | "d" | "m" | "km" | "g" | "ar" | "l" | "le" | "ush" | "br")
-            || matches!(measurement.symbol.to_lowercase().as_str(), "$")
+        matches!(
+            measurement.code.to_lowercase().as_str(),
+            "p" | "k"
+                | "s"
+                | "r"
+                | "t"
+                | "e"
+                | "d"
+                | "m"
+                | "km"
+                | "g"
+                | "ar"
+                | "l"
+                | "le"
+                | "ush"
+                | "br"
+        ) || matches!(measurement.symbol.to_lowercase().as_str(), "$")
     }
 
     pub fn new(measurements: Vec<Measurement>) -> Self {
@@ -110,7 +125,7 @@ impl ConversionService {
         }
     }
 
-    fn find_by<F: Fn(&Measurement) -> bool>(&self, func: F) -> Option<Arc<Measurement>> {
+    pub fn find_by<F: Fn(&Measurement) -> bool>(&self, func: F) -> Option<Arc<Measurement>> {
         if let Ok(measurements) = self.measurements.try_lock() {
             for measurement in measurements.iter() {
                 if func(measurement) {
@@ -139,8 +154,8 @@ impl ConversionService {
             .captures_iter(content)
             .filter_map(|c| {
                 Some((
-                    c.get(1)?.as_str(),
-                    c.get(2)?.as_str().parse::<f64>().ok()?,
+                    c.get(3)?.as_str(),
+                    c.get(1)?.as_str().parse::<f64>().ok()?,
                     MeasurementKind::Unit,
                 ))
             });

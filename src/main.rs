@@ -1,6 +1,7 @@
 mod commands;
 mod core;
 mod slash;
+mod tests;
 
 use std::collections::HashMap;
 use std::env;
