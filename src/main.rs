@@ -24,7 +24,7 @@ struct Handler {
 }
 
 async fn load_units(pool: &Pool<MySql>) -> Result<Vec<Measurement>, String> {
-    Ok(sqlx::query!("SELECT * FROM measurement")
+    Ok(sqlx::query!("SELECT * FROM `measurement`")
         .fetch_all(pool)
         .await
         .map_err(|_| String::from("Error"))?
@@ -40,7 +40,7 @@ async fn load_units(pool: &Pool<MySql>) -> Result<Vec<Measurement>, String> {
 }
 
 async fn load_currencies(pool: &Pool<MySql>) -> Result<Vec<Measurement>, String> {
-    Ok(sqlx::query!("SELECT * FROM currency")
+    Ok(sqlx::query!("SELECT * FROM `currency`")
         .fetch_all(pool)
         .await
         .map_err(|_| String::from("Error"))?
@@ -152,10 +152,6 @@ mod envhelper {
     }
 }
 
-async fn init_client() {
-
-}
-
 #[tokio::main]
 async fn main() {
     envhelper::load();
@@ -176,7 +172,7 @@ async fn main() {
 
     let handler = Handler::new(measurements);
     println!("{:?}", handler);
-    let mut client = Client::builder(token, GatewayIntents::MESSAGE_CONTENT)
+    let mut client = Client::builder(token, GatewayIntents::GUILD_MESSAGES)
         .event_handler(handler)
         .await
         .expect("Error creating client");
