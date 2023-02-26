@@ -1,4 +1,3 @@
-
 #[cfg(test)]
 mod test_mod {
     use crate::MeasurementKind::Unit;

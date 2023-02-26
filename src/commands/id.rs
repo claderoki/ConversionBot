@@ -24,11 +24,12 @@ impl ApplicationCommand for IdCommand {
             .as_ref()
             .expect("Expected user object");
 
-        if let CommandDataOptionValue::User(user, _member) = option {
+        let _r = if let CommandDataOptionValue::User(user, _member) = option {
             format!("{}'s id is {}", user.tag(), user.id)
         } else {
             "Please provide a valid user".to_string()
         };
+
         Ok(())
     }
 

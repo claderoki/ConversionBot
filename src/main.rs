@@ -75,22 +75,24 @@ impl EventHandler for Handler {
             .conversion_service
             .search(message.content.to_lowercase().as_str())
         {
-            println!("{:?}", contexts);
             let mut context_currencies: Option<Vec<Arc<Measurement>>> = None;
             for context in contexts {
+                let mut to_list = vec![];
                 if context.measurement.kind.is_currency() {
-                    if context_currencies.is_none() {
-                        // cached context currencies
-                        context_currencies = Some(Vec::new());
-                    } else {
-                        // add currencies to list.
+                    match &context_currencies {
+                        None => {
+                            context_currencies = Some(Vec::new());
+                        }
+                        Some(currencies) => {
+                            currencies.iter().for_each(|c| to_list.push(c.clone()));
+                        }
                     }
                 }
 
                 let request = ConversionRequest {
                     from: context.measurement,
                     value: context.value,
-                    to_list: vec![],
+                    to_list,
                 };
 
                 if let Ok(_conversion) = self.conversion_service.convert(request) {}
@@ -116,11 +118,11 @@ impl EventHandler for Handler {
         .await;
     }
 
-    async fn interaction_create(&self, _ctx: Context, interaction: Interaction) {
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
             println!("Received command interaction: {command:#?}");
             let name = command.data.name.clone();
-            let context = CommandContext { command };
+            let context = CommandContext { command, ctx };
 
             if let Some(cmd) = self.commands.get(&name) {
                 if let Err(why) = cmd.run(context).await {
@@ -172,7 +174,6 @@ async fn main() {
     let token = env::var("DISCORD_TOKEN").unwrap();
 
     let handler = Handler::new(measurements);
-    println!("{:?}", handler);
     let mut client = Client::builder(token, GatewayIntents::GUILD_MESSAGES)
         .event_handler(handler)
         .await

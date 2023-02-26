@@ -1,5 +1,6 @@
 use serenity::async_trait;
 use serenity::builder::CreateApplicationCommand;
+use serenity::client::Context;
 use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use std::error::Error;
 use std::fmt::Debug;
@@ -16,6 +17,7 @@ where
 
 pub struct CommandContext {
     pub command: ApplicationCommandInteraction,
+    pub ctx: Context,
 }
 
 pub type CommandError = Box<dyn Error + Send + Sync>;
