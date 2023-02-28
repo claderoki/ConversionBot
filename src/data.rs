@@ -35,7 +35,7 @@ pub async fn load_currencies(pool: &Pool<MySql>) -> Result<Vec<Measurement>, Str
 }
 
 
-fn _get_static_measurements() {
+pub fn get_static_measurements() -> Vec<Measurement> {
     vec![
         Measurement { symbol: "m".into(), code: "m".into(), rate: 1.0, name: "meters".into(), kind: Unit },
         Measurement { symbol: "mm".into(), code: "mm".into(), rate:  1000.0, name: "millimeters".into(), kind: Unit },
@@ -55,5 +55,5 @@ fn _get_static_measurements() {
         Measurement { symbol: "mg".into(), code: "mg".into(), rate: 1000.0, name: "milogram".into(), kind: Unit },
         Measurement { symbol: "kg".into(), code: "kg".into(), rate: 0.001, name: "kilogram".into(), kind: Unit },
         Measurement { symbol: "mi".into(), code: "mi".into(), rate: 0.0006213712, name: "miles".into(), kind: Unit }
-    ];
+    ]
 }

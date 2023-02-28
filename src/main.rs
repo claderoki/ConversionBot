@@ -69,6 +69,8 @@ async fn process_context(cached_currencies: &mut CachedCurrencies, context: Conv
         } else {
             cached_currencies.add_to_list(&mut to_list);
         }
+    } else {
+
     }
 
     ConversionRequest {

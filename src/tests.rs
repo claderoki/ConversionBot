@@ -1,47 +1,33 @@
 #[cfg(test)]
 mod test_mod {
-    use crate::core::conversion::{ConversionRequest, ConversionService, Measurement};
-    use crate::core::conversion::MeasurementKind::Unit;
+    use crate::core::conversion::{ConversionRequest, ConversionService};
+    use crate::data::get_static_measurements;
 
     #[test]
-    fn test_conversion() {
-        let conversion_service = ConversionService::new(vec![
-            Measurement {
-                symbol: "m".into(),
-                code: "m".into(),
-                rate: 1.0,
-                name: "meters".into(),
-                kind: Unit,
-            },
-            Measurement {
-                symbol: "km".into(),
-                code: "km".into(),
-                rate: 0.001,
-                name: "kilometers".into(),
-                kind: Unit,
-            },
-        ]);
+    fn test_search() {
+        let conversion_service = ConversionService::new(get_static_measurements());
 
-        let mut converted_successfully = false;
-
-        for context in conversion_service
-            .search("50km hi")
+        let context = conversion_service.search("50km hi")
             .expect("Matches expected.")
-        {
-            let request = ConversionRequest {
-                from: context.measurement,
-                value: context.value,
-                to_list: vec![conversion_service.find_by(|m| m.code == *"m").unwrap()],
-            };
+            .remove(0);
 
-            let conversion = conversion_service.convert(request).unwrap();
+        assert_eq!(context.value, 50.0);
+        assert_eq!(context.measurement.code, "km");
+    }
 
-            for to in conversion.to {
-                assert_eq!(to.value, 50000.0);
-                converted_successfully = true;
-            }
-        }
+    #[test]
+    fn test_convert() {
+        let conversion_service = ConversionService::new(get_static_measurements());
 
-        assert_eq!(converted_successfully, true);
+        let request = ConversionRequest {
+            from: conversion_service.find_by(|m|&m.code == "km").unwrap(),
+            value: 50.0,
+            to_list: vec![conversion_service.find_by(|m|&m.code == "m").unwrap()],
+        };
+
+        let mut conversion = conversion_service.convert(request).unwrap();
+        let to = conversion.to.remove(0);
+
+        assert_eq!(to.value, 50000.0);
     }
 }
