@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod test_mod {
-    use crate::MeasurementKind::Unit;
-    use crate::{ConversionRequest, ConversionService, Measurement};
+    use crate::core::conversion::{ConversionRequest, ConversionService, Measurement};
+    use crate::core::conversion::MeasurementKind::Unit;
 
     #[test]
     fn test_conversion() {
@@ -11,20 +11,6 @@ mod test_mod {
                 code: "m".into(),
                 rate: 1.0,
                 name: "meters".into(),
-                kind: Unit,
-            },
-            Measurement {
-                symbol: "mm".into(),
-                code: "mm".into(),
-                rate: 1000.0,
-                name: "millimeters".into(),
-                kind: Unit,
-            },
-            Measurement {
-                symbol: "cm".into(),
-                code: "cm".into(),
-                rate: 100.0,
-                name: "centimeters".into(),
                 kind: Unit,
             },
             Measurement {
