@@ -52,9 +52,7 @@ pub fn get_others() {
     }
 
     // HashMap<String, Vec<String>>
-    let b: Vec<_> = a.into_iter()
-        .map(test)
-        .collect();
+    let b: Vec<_> = a.into_iter().map(test).collect();
 }
 
 pub fn get_static_measurements() -> Vec<Measurement> {
