@@ -9,7 +9,9 @@ use std::env;
 use std::sync::Arc;
 
 use crate::commands::id::IdCommand;
-use crate::core::conversion::{ConversionContext, ConversionRequest, ConversionService, Measurement};
+use crate::core::conversion::{
+    ConversionContext, ConversionRequest, ConversionService, Measurement,
+};
 use crate::data::{load_currencies, load_units};
 use crate::slash::{ApplicationCommand, CommandContext};
 use serenity::async_trait;
