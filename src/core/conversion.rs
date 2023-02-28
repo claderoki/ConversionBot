@@ -87,8 +87,9 @@ pub struct ConversionService {
 impl ConversionService {
     fn should_skip_currency(measurement: &Measurement) -> bool {
         matches!(
-            measurement.code.to_lowercase().as_str(),
+            measurement.symbol.to_lowercase().as_str(),
             "p" | "k"
+                | "$"
                 | "s"
                 | "r"
                 | "t"
@@ -102,7 +103,7 @@ impl ConversionService {
                 | "le"
                 | "ush"
                 | "br"
-        ) || matches!(measurement.symbol.to_lowercase().as_str(), "$")
+        )
     }
 
     pub fn new(measurements: Vec<Measurement>) -> Self {
@@ -114,7 +115,6 @@ impl ConversionService {
             .collect();
         let measurements_codes: Vec<String> = measurements
             .iter()
-            .filter(|m| !m.kind.is_currency())
             .map(|m| m.code.to_lowercase())
             .dedup()
             .collect();

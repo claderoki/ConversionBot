@@ -7,7 +7,8 @@ mod test_mod {
     fn test_search() {
         let conversion_service = ConversionService::new(get_static_measurements());
 
-        let context = conversion_service.search("50km hi")
+        let context = conversion_service
+            .search("50km hi")
             .expect("Matches expected.")
             .remove(0);
 
@@ -20,9 +21,9 @@ mod test_mod {
         let conversion_service = ConversionService::new(get_static_measurements());
 
         let request = ConversionRequest {
-            from: conversion_service.find_by(|m|&m.code == "km").unwrap(),
+            from: conversion_service.find_by(|m| &m.code == "km").unwrap(),
             value: 50.0,
-            to_list: vec![conversion_service.find_by(|m|&m.code == "m").unwrap()],
+            to_list: vec![conversion_service.find_by(|m| &m.code == "m").unwrap()],
         };
 
         let mut conversion = conversion_service.convert(request).unwrap();

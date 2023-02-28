@@ -1,15 +1,18 @@
 mod commands;
 mod core;
+mod data;
 mod slash;
 mod tests;
-mod data;
 
 use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 
 use crate::commands::id::IdCommand;
-use crate::core::conversion::{ConversionContext, ConversionRequest, ConversionService, Measurement};
+use crate::core::conversion::{
+    ConversionContext, ConversionRequest, ConversionService, Measurement,
+};
+use crate::data::{load_currencies, load_units};
 use crate::slash::{ApplicationCommand, CommandContext};
 use serenity::async_trait;
 use serenity::model::application::interaction::Interaction;
@@ -17,8 +20,7 @@ use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
-use sqlx::{MySqlPool};
-use crate::data::{load_currencies, load_units};
+use sqlx::MySqlPool;
 
 #[derive(Debug)]
 struct Handler {
@@ -39,7 +41,7 @@ impl Handler {
 
 struct CachedCurrencies {
     currencies: Vec<Arc<Measurement>>,
-    filled: bool
+    filled: bool,
 }
 
 impl CachedCurrencies {
@@ -48,7 +50,9 @@ impl CachedCurrencies {
     }
 
     pub fn add(&mut self, measurements: Vec<Arc<Measurement>>) {
-        measurements.iter().for_each(|m|self.currencies.push(m.clone()));
+        measurements
+            .iter()
+            .for_each(|m| self.currencies.push(m.clone()));
         self.filled = true;
     }
 
@@ -61,7 +65,10 @@ async fn get_context_currencies() -> Vec<Arc<Measurement>> {
     vec![]
 }
 
-async fn process_context(cached_currencies: &mut CachedCurrencies, context: ConversionContext) -> ConversionRequest {
+async fn process_context(
+    cached_currencies: &mut CachedCurrencies,
+    context: ConversionContext,
+) -> ConversionRequest {
     let mut to_list = vec![];
     if context.measurement.kind.is_currency() {
         if !&cached_currencies.is_filled() {
@@ -70,7 +77,6 @@ async fn process_context(cached_currencies: &mut CachedCurrencies, context: Conv
             cached_currencies.add_to_list(&mut to_list);
         }
     } else {
-
     }
 
     ConversionRequest {
@@ -88,12 +94,13 @@ impl EventHandler for Handler {
             .conversion_service
             .search(message.content.to_lowercase().as_str())
         {
-            let mut cached_currencies = CachedCurrencies { currencies: vec![], filled: false };
+            let mut cached_currencies = CachedCurrencies {
+                currencies: vec![],
+                filled: false,
+            };
             for context in contexts {
                 let request = process_context(&mut cached_currencies, context).await;
-                if let Ok(_conversion) = self.conversion_service.convert(request) {
-
-                }
+                if let Ok(_conversion) = self.conversion_service.convert(request) {}
             }
         } else {
             println!("No conversions found.");
@@ -156,7 +163,7 @@ mod envhelper {
 async fn get_measurements() -> Result<Vec<Measurement>, String> {
     let pool = MySqlPool::connect(env::var("DATABASE_URL").unwrap().as_str())
         .await
-        .map_err(|_|"Error")?;
+        .map_err(|_| "Error")?;
 
     Ok(load_units(&pool)
         .await?
